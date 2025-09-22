@@ -6,7 +6,7 @@ import logging
 
 from fastapi import FastAPI
 
-from .api import health_router, version_router
+from .api import auth_router, health_router, version_router
 from .settings import get_settings
 
 
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
     app.include_router(health_router)
     app.include_router(version_router)
+    app.include_router(auth_router)
     return app
 
 
