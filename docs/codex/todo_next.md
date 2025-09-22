@@ -1,3 +1,3 @@
-1. Integrate guard scripts into CI and document guard workflow (step-01).
-2. Set up linting/type-check tooling to complement coverage gates.
-3. Draft initial database schema requirements for upcoming mission features.
+1. Activate all guard workflows in CI and create the consolidated run script (step-01).
+2. Extend tooling to cover linting/type checking alongside coverage enforcement.
+3. Outline initial database schema considerations for future mission and auth work.

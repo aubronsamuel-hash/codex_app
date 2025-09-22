@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
+from app.settings import get_settings
 
 
 def test_health_endpoint_returns_expected_payload() -> None:
@@ -11,7 +12,12 @@ def test_health_endpoint_returns_expected_payload() -> None:
     client = TestClient(create_app())
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "codex_app"}
+    expected = {
+        "status": "ok",
+        "service": get_settings().app_name,
+        "environment": get_settings().app_env,
+    }
+    assert response.json() == expected
 
 
 def test_module_level_app_is_reusable() -> None:

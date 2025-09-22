@@ -1,14 +1,16 @@
 {
-  "generated_at": "2025-09-22 05:50:00",
-  "summary": "Bootstrapped FastAPI backend skeleton with health endpoint and coverage-backed tests",
+  "generated_at": "2025-09-22 06:05:33",
+  "summary": "Added configuration settings, logging, and diagnostics endpoints for step 0N",
   "tests": {
     "command": "pytest",
-    "passed": 2,
+    "passed": 3,
     "failed": 0
   },
-  "duration_seconds": 0,
+  "duration_seconds": 2,
   "token_cost": null,
   "diff": [
-    "Added pyproject configuration, FastAPI app, and README instructions for step 0N"
+    "Introduced environment-driven settings and wired them into the FastAPI factory",
+    "Added /version endpoint alongside enriched /health response with environment metadata",
+    "Documented configuration variables and sample diagnostics usage in README"
   ]
 }

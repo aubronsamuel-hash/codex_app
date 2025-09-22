@@ -1,18 +1,25 @@
 """Application factory for the Codex backend."""
 
+from __future__ import annotations
+
+import logging
+
 from fastapi import FastAPI
 
-from .api import health_router
-
-APP_TITLE = "Codex App"
-APP_VERSION = "0.1.0"
+from .api import health_router, version_router
+from .settings import get_settings
 
 
 def create_app() -> FastAPI:
     """Instantiate the FastAPI application with core routes."""
 
-    app = FastAPI(title=APP_TITLE, version=APP_VERSION)
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
+    settings = get_settings()
+
+    app = FastAPI(title=settings.app_name, version=settings.app_version)
+    app.state.settings = settings
     app.include_router(health_router)
+    app.include_router(version_router)
     return app
 
 
