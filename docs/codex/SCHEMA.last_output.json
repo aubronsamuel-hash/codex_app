@@ -1,0 +1,33 @@
+{
+  "description": "Minimal documentation for docs/codex/last_output.json",
+  "version": 1,
+  "required_keys": [
+    "version",
+    "step",
+    "title",
+    "summary",
+    "status",
+    "timestamp"
+  ],
+  "optional_keys": [
+    "outputs"
+  ],
+  "notes": [
+    "All values must be ASCII characters only.",
+    "Timestamp must be UTC in ISO 8601 format with a trailing Z.",
+    "Outputs is an optional array of strings for extra context."
+  ],
+  "example": {
+    "version": "1",
+    "step": "03",
+    "title": "Step 03 - Guards Passing Snapshot",
+    "summary": "All guards green and summary present.",
+    "status": "success",
+    "timestamp": "2025-01-01T00:00:00Z",
+    "outputs": [
+      "pytest ok",
+      "lint ok",
+      "guards ok"
+    ]
+  }
+}

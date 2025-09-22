@@ -1,0 +1,80 @@
+name: Guards Precheck
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  pre-guards-last-output:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PowerShell
+        uses: PowerShell/PowerShell@v1
+        with:
+          version: '7.4.x'
+      - name: Ensure last_output snapshot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $target = "docs/codex/last_output.json"
+          $required = @("version", "step", "title", "summary", "status", "timestamp")
+          $hadFile = Test-Path $target
+          $originalContent = $null
+          $originalIssues = @()
+          $originalJson = $null
+
+          if ($hadFile) {
+            $originalContent = Get-Content -Path $target -Raw
+            try {
+              $originalJson = $originalContent | ConvertFrom-Json
+            } catch {
+              $originalIssues += "invalid json"
+            }
+
+            if ($originalJson) {
+              foreach ($key in $required) {
+                $hasProperty = $originalJson.PSObject.Properties.Name -contains $key
+                $value = $originalJson.$key
+                if (-not $hasProperty -or [string]::IsNullOrWhiteSpace([string]$value)) {
+                  $originalIssues += $key
+                }
+              }
+            }
+          } else {
+            $originalIssues += "missing"
+          }
+
+          try {
+            pwsh -File tools/codex/ensure_last_output.ps1 -Step "${{ github.ref_name }}" -Title "Auto ensure last_output" -Summary "CI ensure step" -Status "pending"
+            $generatedJson = Get-Content -Path $target -Raw | ConvertFrom-Json
+            foreach ($key in $required) {
+              $hasProperty = $generatedJson.PSObject.Properties.Name -contains $key
+              $value = $generatedJson.$key
+              if (-not $hasProperty -or [string]::IsNullOrWhiteSpace([string]$value)) {
+                throw "Generated last_output.json missing key: $key"
+              }
+            }
+          } finally {
+            if ($hadFile -and $null -ne $originalContent) {
+              Set-Content -Encoding Ascii -Path $target -Value $originalContent
+            } elseif (-not $hadFile -and (Test-Path $target)) {
+              Remove-Item $target -Force
+            }
+          }
+
+          if (-not $hadFile) {
+            Write-Error "docs/codex/last_output.json is missing from the branch. Run the ensure script locally and commit the result."
+            exit 1
+          }
+
+          if ($originalIssues.Count -gt 0) {
+            $issueList = $originalIssues -join ", "
+            Write-Error "docs/codex/last_output.json has issues: $issueList. Run the ensure script locally and commit the result."
+            exit 1
+          }
+
+          Write-Host "docs/codex/last_output.json already satisfies the minimal schema."
