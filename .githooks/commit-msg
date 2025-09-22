@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -e
+MSGFILE="$1"
+# Appelle PowerShell Core (pwsh doit etre dans le PATH sur les machines dev)
+pwsh -NoProfile -File "./.githooks/commit-msg.ps1" "$MSGFILE"

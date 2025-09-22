@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Codex Archive Viewer</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; color: #222; }
+  header { background: #1f2933; color: #fff; padding: 1.5rem; text-align: center; }
+  main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+  .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
+  .controls input[type="search"] { flex: 1 1 280px; padding: 0.5rem; font-size: 1rem; border: 1px solid #bbb; border-radius: 4px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  th, td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+  th { background: #e4e7eb; cursor: pointer; user-select: none; position: relative; }
+  th.sort-asc::after { content: "▲"; position: absolute; right: 0.5rem; }
+  th.sort-desc::after { content: "▼"; position: absolute; right: 0.5rem; }
+  tbody tr:hover { background: #f1f5f9; }
+  .status-success { color: #0a7d0a; font-weight: bold; }
+  .status-failed { color: #b00020; font-weight: bold; }
+  .status-pending { color: #b7791f; font-weight: bold; }
+  footer { text-align: center; padding: 1rem; font-size: 0.85rem; color: #555; }
+  code { background: #edf2f7; padding: 0.1rem 0.25rem; border-radius: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Codex Archive Viewer</h1>
+  <p>Search, filter, and sort archived Codex outputs.</p>
+</header>
+<main>
+  <section class="controls">
+    <input id="search" type="search" placeholder="Filter by commit, step, title, or status" aria-label="Search archive entries" />
+    <span id="count">0 entries</span>
+  </section>
+  <section class="table-wrapper">
+    <table aria-describedby="count">
+      <thead>
+        <tr>
+          <th data-key="timestamp">Timestamp</th>
+          <th data-key="step">Step</th>
+          <th data-key="status">Status</th>
+          <th data-key="title">Title</th>
+          <th data-key="commit">Commit</th>
+          <th data-key="filename">File</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="6">Loading archive entries...</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+<footer>
+  Data source: <code>index.json</code>. Regenerated automatically after merges.
+</footer>
+<script>
+(function() {
+  const searchInput = document.getElementById('search');
+  const rowsContainer = document.getElementById('rows');
+  const countLabel = document.getElementById('count');
+  const headers = Array.from(document.querySelectorAll('th[data-key]'));
+  let entries = [];
+  let filtered = [];
+  let sortKey = 'timestamp';
+  let sortDir = 'desc';
+
+  function render() {
+    const fragment = document.createDocumentFragment();
+    if (filtered.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 6;
+      td.textContent = 'No entries match the current filter.';
+      tr.appendChild(td);
+      fragment.appendChild(tr);
+    } else {
+      filtered.forEach(entry => {
+        const tr = document.createElement('tr');
+
+        const tdTimestamp = document.createElement('td');
+        tdTimestamp.textContent = entry.timestamp;
+        tr.appendChild(tdTimestamp);
+
+        const tdStep = document.createElement('td');
+        tdStep.textContent = 'step-' + entry.step;
+        tr.appendChild(tdStep);
+
+        const tdStatus = document.createElement('td');
+        tdStatus.textContent = entry.status;
+        tdStatus.classList.add('status-' + entry.status.toLowerCase());
+        tr.appendChild(tdStatus);
+
+        const tdTitle = document.createElement('td');
+        tdTitle.textContent = entry.title;
+        tr.appendChild(tdTitle);
+
+        const tdCommit = document.createElement('td');
+        const commitLink = document.createElement('a');
+        commitLink.href = 'https://github.com/' + (window.CodexRepo || '') + '/commit/' + entry.commit;
+        commitLink.textContent = entry.commit;
+        commitLink.target = '_blank';
+        commitLink.rel = 'noopener';
+        tdCommit.appendChild(commitLink);
+        tr.appendChild(tdCommit);
+
+        const tdFile = document.createElement('td');
+        const fileLink = document.createElement('a');
+        fileLink.href = entry.path;
+        fileLink.textContent = entry.filename;
+        fileLink.target = '_blank';
+        fileLink.rel = 'noopener';
+        tdFile.appendChild(fileLink);
+        tr.appendChild(tdFile);
+
+        fragment.appendChild(tr);
+      });
+    }
+    rowsContainer.innerHTML = '';
+    rowsContainer.appendChild(fragment);
+    countLabel.textContent = filtered.length + (filtered.length === 1 ? ' entry' : ' entries');
+  }
+
+  function applyFilter() {
+    const term = searchInput.value.trim().toLowerCase();
+    if (!term) {
+      filtered = entries.slice();
+    } else {
+      filtered = entries.filter(entry => {
+        return entry.commit.toLowerCase().includes(term) ||
+               entry.step.toLowerCase().includes(term) ||
+               entry.status.toLowerCase().includes(term) ||
+               entry.title.toLowerCase().includes(term) ||
+               entry.filename.toLowerCase().includes(term);
+      });
+    }
+    applySort();
+  }
+
+  function applySort() {
+    const dirMultiplier = sortDir === 'asc' ? 1 : -1;
+    filtered.sort((a, b) => {
+      const va = a[sortKey] || '';
+      const vb = b[sortKey] || '';
+      if (va < vb) { return -1 * dirMultiplier; }
+      if (va > vb) { return 1 * dirMultiplier; }
+      return 0;
+    });
+    render();
+  }
+
+  function updateSort(key) {
+    if (sortKey === key) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortDir = key === 'timestamp' ? 'desc' : 'asc';
+    }
+    headers.forEach(h => {
+      h.classList.remove('sort-asc', 'sort-desc');
+      if (h.dataset.key === sortKey) {
+        h.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      }
+    });
+    applySort();
+  }
+
+  headers.forEach(header => {
+    header.addEventListener('click', () => updateSort(header.dataset.key));
+  });
+
+  searchInput.addEventListener('input', () => applyFilter());
+
+  fetch('index.json', { cache: 'no-cache' })
+    .then(resp => {
+      if (!resp.ok) { throw new Error('Failed to load index.json'); }
+      return resp.json();
+    })
+    .then(data => {
+      entries = Array.isArray(data) ? data : [];
+      filtered = entries.slice();
+      updateSort('timestamp');
+    })
+    .catch(err => {
+      rowsContainer.innerHTML = '';
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 6;
+      td.textContent = 'Unable to load index.json: ' + err.message;
+      tr.appendChild(td);
+      rowsContainer.appendChild(tr);
+      countLabel.textContent = '0 entries';
+    });
+})();
+</script>
+</body>
+</html>

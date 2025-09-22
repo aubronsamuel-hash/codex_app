@@ -12,10 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up PowerShell
-        uses: PowerShell/PowerShell@v1
-        with:
-          version: '7.4.x'
       - name: Ensure last_output snapshot
         shell: pwsh
         run: |
@@ -49,7 +45,7 @@ jobs:
           }
 
           try {
-            pwsh -File tools/codex/ensure_last_output.ps1 -Step "${{ github.ref_name }}" -Title "Auto ensure last_output" -Summary "CI ensure step" -Status "pending"
+            pwsh -File tools/codex/ensure_last_output.ps1 -Step "${{ github.head_ref || github.ref_name }}" -Title "Auto ensure last_output" -Summary "CI ensure step" -Status "pending"
             $generatedJson = Get-Content -Path $target -Raw | ConvertFrom-Json
             foreach ($key in $required) {
               $hasProperty = $generatedJson.PSObject.Properties.Name -contains $key
@@ -78,3 +74,21 @@ jobs:
           }
 
           Write-Host "docs/codex/last_output.json already satisfies the minimal schema."
+      - name: Best-effort add Ref to PR body
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BR="${{ github.head_ref }}"
+          if [[ "$BR" =~ step[-_/]?([0-9]{1,2}) ]]; then
+            STEP=$(printf "%02d" "${BASH_REMATCH[1]}")
+            BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body || echo "")
+            if ! echo "$BODY" | grep -qi "Ref: docs/roadmap/step-$STEP.md"; then
+              NEW="$BODY"
+              NEW="$NEW
+Ref: docs/roadmap/step-$STEP.md"
+              gh pr edit ${{ github.event.pull_request.number }} --body "$NEW" || true
+            fi
+          fi
