@@ -47,6 +47,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
+      - name: Export PR body to env
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "PR_BODY<<EOF" >> $GITHUB_ENV
+          echo "${{ github.event.pull_request.body }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Run guard suite
         shell: pwsh
         run: ./tools/guards/run_all_guards.ps1

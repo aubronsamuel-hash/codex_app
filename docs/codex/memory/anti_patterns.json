@@ -7,6 +7,10 @@
     {
       "pattern": "hardcoding secrets",
       "remedy": "load from env; add secret scanner to CI"
+    },
+    {
+      "pattern": "PR without 'Ref: docs/roadmap/step-XX.md'",
+      "remedy": "Add the 'Ref:' line to PR body and last commit; run roadmap_guard locally."
     }
   ]
 }
