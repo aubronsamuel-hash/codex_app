@@ -58,7 +58,7 @@ class MissionUpdate(BaseModel):
 class MissionRead(BaseModel):
     """Serialized mission returned by the API."""
 
-    id: uuid.UUID
+    id: str
     title: str
     start_time: datetime
     end_time: datetime
@@ -68,6 +68,11 @@ class MissionRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _stringify_id(cls, raw: uuid.UUID | str) -> str:
+        return str(raw)
 
 
 __all__ = [
