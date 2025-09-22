@@ -1,0 +1,43 @@
+name: archive-last-output
+on:
+  pull_request:
+    types: [closed]
+permissions:
+  contents: write
+jobs:
+  archive:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+      - name: Archive last_output.json
+        shell: pwsh
+        run: pwsh -File tools/codex/archive_last_output.ps1
+      - name: Generate index.json
+        shell: pwsh
+        run: pwsh -File tools/codex/archive_to_index_json.ps1
+      - name: Update ARCHIVE_VIEWER.md
+        shell: pwsh
+        run: |
+          $md = "docs/codex/archive/ARCHIVE_VIEWER.md"
+          $json = "docs/codex/archive/index.json"
+          $data = Get-Content $json | ConvertFrom-Json
+          $top = $data | Select-Object -First 20
+          $lines = @()
+          foreach ($r in $top) { $lines += "- ["+$r.timestamp+"] step-"+$r.step+" ("+$r.status+"): "+$r.title+" -> "+$r.filename }
+          $content = Get-Content $md -Raw
+          $new = $content -replace "(?s)<!-- BEGIN AUTO-GENERATED -->.*<!-- END AUTO-GENERATED -->","<!-- BEGIN AUTO-GENERATED -->`n"+($lines -join "`n")+"`n<!-- END AUTO-GENERATED -->"
+          Set-Content -Encoding Ascii -Path $md -Value $new
+      - name: Commit and push archive
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add docs/codex/archive
+            git commit -m "chore(archive): update archive viewer [skip ci]"
+            git push origin "${GITHUB_REF_NAME:-${{ github.event.pull_request.base.ref }}}"
+          fi

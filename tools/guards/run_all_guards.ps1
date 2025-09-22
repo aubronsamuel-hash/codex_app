@@ -22,34 +22,38 @@ if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
 
+Write-Host "Running commit_guard.ps1..."
+try {
+  pwsh -File tools/guards/commit_guard.ps1
+  if ($LASTEXITCODE -ne 0) { throw "commit_guard exit code $LASTEXITCODE" }
+} catch {
+  Write-Error "commit_guard failed."
+  Write-Host "If the error mentions last_output.json or summary, run:"
+  Write-Host "  pwsh -File tools/codex/ensure_last_output.ps1 -Step \"NN\" -Title \"Title\" -Summary \"Short summary\""
+  if (Test-Path $coverageSummary) { Remove-Item $coverageSummary -Force }
+  exit 1
+}
+
 $guards = @(
   "policy_guard.ps1",
   "roadmap_guard.ps1",
-  "commit_guard.ps1",
   "secret_scan.ps1",
   "readme_guard.ps1",
   "coverage_guard.ps1"
 )
 
-$guardExit = 0
 foreach ($guard in $guards) {
   $path = Join-Path $PSScriptRoot $guard
   Write-Host "Running $guard..."
   & $path
   if ($LASTEXITCODE -ne 0) {
-    if ($guard -eq "commit_guard.ps1") {
-      Write-Host "commit_guard detected an issue with docs/codex/last_output.json."
-      Write-Host 'Run: pwsh -File tools/codex/ensure_last_output.ps1 -Step "NN" -Title "Title" -Summary "Short summary"'
-    }
-    $guardExit = $LASTEXITCODE
-    break
+    if (Test-Path $coverageSummary) { Remove-Item $coverageSummary -Force }
+    exit $LASTEXITCODE
   }
 }
 
 if (Test-Path $coverageSummary) {
   Remove-Item $coverageSummary -Force
 }
-
-if ($guardExit -ne 0) { exit $guardExit }
 
 Write-Host "All guards completed successfully."

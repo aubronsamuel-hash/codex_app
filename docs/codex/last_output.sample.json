@@ -1,8 +1,1 @@
-{
-  "version": "1",
-  "step": "XX",
-  "title": "Step XX - Snapshot",
-  "summary": "Short summary of the latest progress.",
-  "status": "success",
-  "timestamp": "2025-01-01T00:00:00Z"
-}
+{ "version": "1", "step": "XX", "title": "Step XX - Snapshot", "summary": "Short human summary of the step result.", "status": "success", "timestamp": "2025-01-01T00:00:00Z" }
