@@ -1,0 +1,27 @@
+name: auto-ref-fix
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches:
+      - '**'
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ensure-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup PowerShell 7
+        uses: PowerShell/PowerShell@v1
+        with:
+          pwsh-version: '7.4.x'
+      - name: Ensure roadmap Refs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: pwsh -File tools/codex/fix_roadmap_ref.ps1 -Step auto -CreatePrIfMissing
