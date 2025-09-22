@@ -21,10 +21,18 @@ REQUIRED OUTPUTS EACH STEP
 - docs/codex/reflections.md (<=200 words)
 - docs/codex/todo_next.md (ordered list)
 
+ARCHIVE SNAPSHOT
+----------------
+- Run `python tools/codex/archive_step.py --step <STEP>` to copy the current
+  reflections and TODO list into `docs/codex/history/` and append a JSON line to
+  `docs/codex/history/last_output.jsonl`.
+- Never overwrite an existing history file. If a mistake slips in, correct it in a
+  later step instead of rewriting past records.
+
 MEMORY
 ------
-- docs/codex/memory/decisions.jsonl (append)
-- docs/codex/memory/anti_patterns.json (update when recurring mistakes are found)
+- docs/codex/memory/decisions.jsonl (append-only; never rewrite past entries)
+- docs/codex/memory/anti_patterns.json (append-only when recurring mistakes are found)
 
 CHECKLIST BEFORE OPENING PR
 ---------------------------
