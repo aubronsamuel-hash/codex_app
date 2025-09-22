@@ -9,14 +9,14 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 3
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$guardParameters = @{}
+$commonArgs = @{}
 if ($Strict) {
-    $guardParameters["Strict"] = $true
+    $commonArgs.Strict = $true
 }
 
 function Run-Step($name, $script) {
     Write-Host ("Running {0}..." -f $name)
-    & $script @guardParameters
+    & $script @commonArgs
     if ($LASTEXITCODE -ne 0) { throw ("{0} failed." -f $name) }
 }
 
