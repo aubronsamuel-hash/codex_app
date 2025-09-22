@@ -54,16 +54,25 @@ export PORT=9000
 uvicorn app.main:app --reload --host "$HOST" --port "$PORT"
 ```
 
-## Tests and coverage
+## Tests, coverage, and guards
 
 Pytest is configured to collect coverage automatically with a minimum threshold of 85%.
-Simply run:
+Run the suite directly when you need a quick check:
 
 ```bash
-pytest
+python -m pytest
 ```
 
-The default options produce a terminal coverage report and fail the run if thresholds are not met.
+Before opening a pull request execute the consolidated guard harness. It installs no extra tools beyond pytest and ensures the
+repository meets Codex policy requirements:
+
+```bash
+pwsh -File tools/guards/run_all_guards.ps1
+```
+
+The PowerShell script runs pytest, generates `coverage_summary.txt`, and invokes all guards (`policy_guard`, `roadmap_guard`,
+`commit_guard`, `secret_scan`, `readme_guard`, and `coverage_guard`). Refer to `docs/CI.md` for details on GitHub Actions jobs
+and local setup tips.
 
 ## Operational docs
 

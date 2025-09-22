@@ -1,3 +1,3 @@
-1. Activate all guard workflows in CI and create the consolidated run script (step-01).
-2. Extend tooling to cover linting/type checking alongside coverage enforcement.
-3. Outline initial database schema considerations for future mission and auth work.
+1. Add linting and static analysis guards to run alongside coverage in CI.
+2. Create integration-style tests that exercise multiple API routes together.
+3. Document the release promotion workflow and tagging strategy.
