@@ -10,19 +10,22 @@ Set-StrictMode -Version 3
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-function Run-Step($name, $script) {
-    Write-Host ("Running {0}..." -f $name)
-    & $script @script:PSBoundParameters
-    if ($LASTEXITCODE -ne 0) { throw ("{0} failed." -f $name) }
-}
+$guards = @(
+    @{ name = 'roadmap_guard.ps1'; path = Join-Path $root 'roadmap_guard.ps1'; fix = 'Run: pwsh -File tools/codex/ensure_roadmap_ref.ps1 -StepRef "docs/roadmap/step-XX.md"' },
+    @{ name = 'commit_guard.ps1'; path = Join-Path $root 'commit_guard.ps1'; fix = 'Ensure docs/codex/last_output.json is valid and include the roadmap Ref in the PR body.' }
+)
 
-# Example ordering: roadmap first, then commit
-if (Test-Path "$root/roadmap_guard.ps1") {
-    Run-Step "roadmap_guard.ps1" "$root/roadmap_guard.ps1"
-}
+$strictArgs = @()
+if ($Strict) { $strictArgs += '-Strict' }
 
-if (Test-Path "$root/commit_guard.ps1") {
-    Run-Step "commit_guard.ps1" "$root/commit_guard.ps1"
+foreach ($g in $guards) {
+    if (-not (Test-Path -LiteralPath $g.path)) { continue }
+    Write-Host "Running $($g.name)..."
+    pwsh -NoProfile -File $g.path @strictArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "$($g.name) failed. $($g.fix)"
+        throw "$($g.name) failed."
+    }
 }
 
 Write-Host "All guards passed."

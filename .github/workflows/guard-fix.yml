@@ -1,0 +1,48 @@
+name: guard-fix
+on:
+  workflow_dispatch:
+    inputs:
+      step_ref:
+        description: 'Optional roadmap ref override (e.g. docs/roadmap/step-04.md)'
+        required: false
+      amend:
+        description: 'Amend the last commit instead of creating a new one'
+        required: false
+        type: boolean
+      pr_number:
+        description: 'PR number to update (optional, auto-detected when omitted)'
+        required: false
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ensure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Ensure roadmap reference
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+        run: |
+          $stepRef = '${{ github.event.inputs.step_ref }}'
+          $amend = '${{ github.event.inputs.amend }}'
+          $args = @()
+          if ($stepRef) {
+            $args += '-StepRef'
+            $args += $stepRef
+          }
+          if ($amend -eq 'true') {
+            $args += '-Amend'
+          }
+          pwsh -v
+          pwsh -File tools/codex/ensure_roadmap_ref.ps1 @args
