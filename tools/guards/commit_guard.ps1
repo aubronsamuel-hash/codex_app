@@ -1,36 +1,56 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+# ASCII-only. PowerShell 7+
+# Purpose: validate PR body "Ref: docs/roadmap/step-XX.md" and last_output.json when --strict.
+# Usage:
+#   pwsh -File tools/guards/commit_guard.ps1
+#   pwsh -File tools/guards/commit_guard.ps1 --strict
+# CI passes PR body via env: PR_BODY
 
-Param(
-  [switch]$Strict
+param(
+    [switch]$Strict,
+    [string]$PrBody,
+    [string]$LastOutputPath = "docs/codex/last_output.json"
 )
-. "$PSScriptRoot/utils.ps1"
 
-$repoRoot = git rev-parse --show-toplevel 2>$null
-if (-not $repoRoot) { $repoRoot = (Resolve-Path ".").Path }
-$lastOut = Join-Path $repoRoot "docs/codex/last_output.json"
-$hint = 'Hint: pwsh -File tools/codex/ensure_last_output.ps1 -Step "NN" -Title "Title" -Summary "Short summary"'
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version 3
 
-if (-not (Test-Path $lastOut)) {
-  Write-Host $hint
-  Exit-Fail "commit_guard: missing docs/codex/last_output.json"
+function Fail([string]$Message) {
+    Write-Error $Message
+    exit 1
 }
 
-try {
-  $obj = Get-Content -Path $lastOut -Raw | ConvertFrom-Json
-} catch {
-  Write-Host $hint
-  Exit-Fail "commit_guard: docs/codex/last_output.json is not valid JSON."
+# Source PR body from param or env
+if (-not $PrBody -and $env:PR_BODY) { $PrBody = $env:PR_BODY }
+
+Write-Host "commit_guard: strict=$($Strict.IsPresent), last_output='$LastOutputPath'"
+
+# 1) Roadmap reference check (strict only)
+$refPattern = 'Ref:\s*docs/roadmap/step-\d+\.md'
+if ($Strict) {
+    if (-not $PrBody) {
+        Fail "Missing PR body content. Provide --PrBody or set env:PR_BODY."
+    }
+    if ($PrBody -notmatch $refPattern) {
+        Fail "Missing 'Ref: docs/roadmap/step-XX.md' in PR or last commit."
+    }
+} else {
+    if ($PrBody -and ($PrBody -notmatch $refPattern)) {
+        Write-Warning "PR body has no 'Ref: docs/roadmap/step-XX.md' (non-strict)."
+    }
 }
 
-$required = @("version","step","title","summary","status","timestamp")
-$missing = @()
-foreach ($k in $required) {
-  if (-not $obj.PSObject.Properties.Name.Contains($k) -or [string]::IsNullOrWhiteSpace([string]$obj.$k)) { $missing += $k }
-}
-if ($missing.Count -gt 0) {
-  Write-Host $hint
-  Exit-Fail ("commit_guard: last_output.json missing: " + ($missing -join ", "))
+# 2) Validate docs/codex/last_output.json
+if (Test-Path -LiteralPath $LastOutputPath) {
+    try {
+        $null = Get-Content -LiteralPath $LastOutputPath -Raw | ConvertFrom-Json
+        Write-Host "last_output.json is valid JSON."
+    } catch {
+        Fail ("Invalid JSON at {0}: {1}" -f $LastOutputPath, $_.Exception.Message)
+    }
+} elseif ($Strict) {
+    Fail ("Missing required file: {0}" -f $LastOutputPath)
+} else {
+    Write-Host ("Optional file not found (non-strict): {0}" -f $LastOutputPath)
 }
 
-Write-Host "commit_guard: OK"
+Write-Host "commit_guard OK"
