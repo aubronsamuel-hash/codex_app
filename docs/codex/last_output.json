@@ -1,16 +1,16 @@
 {
-  "generated_at": "2025-09-22 07:45:00",
-  "summary": "Documented the roadmap_guard reference requirement and hardened templates plus CI to keep the Ref line in sync.",
+  "generated_at": "2025-09-22T08:45:00Z",
+  "summary": "Implemented append-only history for Codex logs and reinforced reminders in templates and checklists.",
   "tests": {
-    "command": "pwsh -File tools/guards/run_all_guards.ps1",
-    "passed": 1,
+    "command": "pytest",
+    "passed": 5,
     "failed": 0
   },
-  "duration_seconds": 18,
+  "duration_seconds": 210,
   "token_cost": null,
   "diff": [
-    "Recorded roadmap_guard root cause and prevention in reflections",
-    "Extended anti-pattern memory with missing Ref guidance",
-    "Added PR template and CI export to surface the Ref string requirement"
+    "Refreshed Codex reflection, TODO list, and last output for the persistent history step.",
+    "Archived current snapshots into append-only history folders and appended JSON ledger.",
+    "Updated PR template, auto-review checklist, and memory to enforce archival discipline."
   ]
 }
