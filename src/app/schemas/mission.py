@@ -1,72 +1,73 @@
-"""Pydantic schemas for mission data."""
+"""Pydantic schemas for missions."""
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
+import uuid
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 from app.models import MissionStatus
 
 
 class MissionBase(BaseModel):
-    """Common fields shared by mission payloads."""
+    """Fields shared across mission payloads."""
 
-    code: str = Field(min_length=3, max_length=40, pattern=r"^[A-Z0-9-]+$")
-    title: str = Field(min_length=1, max_length=255)
-    summary: str | None = Field(default=None, max_length=2000)
-    starts_at: datetime | None = None
-    ends_at: datetime | None = None
+    title: str
+    start_time: datetime
+    end_time: datetime
+    status: MissionStatus = MissionStatus.DRAFT
+    notes: Optional[str] = None
 
-    @field_validator("ends_at")
+    @field_validator("end_time")
     @classmethod
-    def _validate_schedule(cls, ends_at: datetime | None, values: dict[str, object]) -> datetime | None:
-        """Ensure end date is not before the start date when both are provided."""
-
-        start = values.get("starts_at")
-        if start and ends_at and ends_at < start:
-            raise ValueError("ends_at must be greater than or equal to starts_at")
-        return ends_at
+    def validate_interval(cls, end_time: datetime, info: ValidationInfo) -> datetime:
+        start_time = info.data.get("start_time")
+        if start_time and end_time <= start_time:
+            raise ValueError("end_time must be after start_time")
+        return end_time
 
 
 class MissionCreate(MissionBase):
-    """Payload for creating a mission record."""
+    """Payload for creating a mission."""
 
-    status: MissionStatus = MissionStatus.DRAFT
-    owner_id: int | None = None
+    pass
 
 
 class MissionUpdate(BaseModel):
-    """Payload for updating mutable mission fields."""
+    """Payload for updating mission fields."""
 
-    title: str | None = Field(default=None, min_length=1, max_length=255)
-    summary: str | None = Field(default=None, max_length=2000)
-    starts_at: datetime | None = None
-    ends_at: datetime | None = None
-    status: MissionStatus | None = None
-    owner_id: int | None = None
+    title: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    status: Optional[MissionStatus] = None
+    notes: Optional[str] = None
 
-    @field_validator("ends_at")
+    @field_validator("end_time")
     @classmethod
-    def _validate_schedule(cls, ends_at: datetime | None, values: dict[str, object]) -> datetime | None:
-        start = values.get("starts_at")
-        if start and ends_at and ends_at < start:
-            raise ValueError("ends_at must be greater than or equal to starts_at")
-        return ends_at
+    def validate_interval_update(
+        cls, end_time: Optional[datetime], info: ValidationInfo
+    ) -> Optional[datetime]:
+        start_time = info.data.get("start_time")
+        if start_time and end_time and end_time <= start_time:
+            raise ValueError("end_time must be after start_time")
+        return end_time
 
 
-class MissionRead(MissionBase):
-    """Public representation of a mission."""
+class MissionRead(BaseModel):
+    """Serialized mission returned by the API."""
 
-    id: int
+    id: uuid.UUID
+    title: str
+    start_time: datetime
+    end_time: datetime
     status: MissionStatus
-    owner_id: int | None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
-    model_config = {
-        "from_attributes": True,
-    }
+    model_config = ConfigDict(from_attributes=True)
 
 
 __all__ = [

@@ -1,112 +1,130 @@
-"""Mission domain model with status transitions."""
+"""Mission domain model and state transitions."""
 
 from __future__ import annotations
 
-from datetime import datetime
-from enum import Enum
-from typing import ClassVar, TYPE_CHECKING
+import enum
+import uuid
+from datetime import UTC, datetime
+from typing import ClassVar
 
-from sqlalchemy import (
-    CheckConstraint,
-    DateTime,
-    Enum as SQLEnum,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-    func,
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import CheckConstraint, DateTime, Enum, Index, String, func
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column
 
-from ..db import Base
-
-if TYPE_CHECKING:  # pragma: no cover
-    from .user import User
+from app.db import Base
 
 
-class MissionStatus(str, Enum):
+class MissionStatus(str, enum.Enum):
     """Possible lifecycle states for a mission."""
 
-    DRAFT = "draft"
-    SCHEDULED = "scheduled"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    DRAFT = "DRAFT"
+    PLANNED = "PLANNED"
+    CONFIRMED = "CONFIRMED"
+    IN_PROGRESS = "IN_PROGRESS"
+    DONE = "DONE"
+    CANCELED = "CANCELED"
 
 
-class Mission(Base):
-    """Mission persisted entity representing planned work."""
+def utcnow() -> datetime:
+    """Return the current UTC datetime.
+
+    Using a helper keeps the value patchable in tests when needed.
+    """
+
+    return datetime.now(tz=UTC).replace(tzinfo=None)
+
+
+class MissionMixin:
+    """Shared transition helpers for missions."""
+
+    _ALLOWED_TRANSITIONS: ClassVar[dict[MissionStatus, set[MissionStatus]]] = {
+        MissionStatus.DRAFT: {
+            MissionStatus.PLANNED,
+            MissionStatus.CONFIRMED,
+            MissionStatus.CANCELED,
+        },
+        MissionStatus.PLANNED: {
+            MissionStatus.CONFIRMED,
+            MissionStatus.CANCELED,
+        },
+        MissionStatus.CONFIRMED: {
+            MissionStatus.IN_PROGRESS,
+            MissionStatus.CANCELED,
+        },
+        MissionStatus.IN_PROGRESS: {MissionStatus.DONE},
+        MissionStatus.DONE: set(),
+        MissionStatus.CANCELED: set(),
+    }
+
+    def can_transition_to(self, nxt: MissionStatus) -> bool:
+        """Return True when the transition to ``nxt`` is allowed."""
+
+        current = MissionStatus(self.status)
+        return nxt in self._ALLOWED_TRANSITIONS.get(current, set())
+
+    def transition_to(self, nxt: MissionStatus) -> None:
+        """Update the mission status after validating the transition."""
+
+        if not self.can_transition_to(nxt):  # pragma: no branch - single guard
+            raise ValueError(f"invalid transition {self.status} -> {nxt}")
+        self.status = nxt
+
+    def start(self) -> None:
+        """Move the mission to the in-progress state."""
+
+        self.transition_to(MissionStatus.IN_PROGRESS)
+
+    def finish(self) -> None:
+        """Mark the mission as completed."""
+
+        self.transition_to(MissionStatus.DONE)
+
+    def cancel(self) -> None:
+        """Cancel the mission."""
+
+        self.transition_to(MissionStatus.CANCELED)
+
+
+class Mission(Base, MissionMixin):
+    """Persisted mission with scheduling metadata."""
 
     __tablename__ = "missions"
     __table_args__ = (
-        UniqueConstraint("code", name="uq_missions_code"),
-        CheckConstraint(
-            "(starts_at IS NULL OR ends_at IS NULL) OR starts_at <= ends_at",
-            name="ck_missions_schedule_order",
-        ),
+        CheckConstraint("start_time < end_time", name="ck_missions_time_range"),
+        Index("ix_missions_time_range", "start_time", "end_time"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    code: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    summary: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
     status: Mapped[MissionStatus] = mapped_column(
-        SQLEnum(MissionStatus, native_enum=False, length=50),
+        Enum(MissionStatus, name="mission_status", native_enum=False, validate_strings=True),
         nullable=False,
         default=MissionStatus.DRAFT,
+        server_default=MissionStatus.DRAFT.value,
     )
-    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    owner_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
-    )
+    notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=False),
         nullable=False,
+        default=utcnow,
         server_default=func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=False),
         nullable=False,
+        default=utcnow,
         server_default=func.now(),
-        onupdate=func.now(),
+        onupdate=utcnow,
     )
 
-    owner: Mapped["User | None"] = relationship("User", backref="missions")
-
-    _TRANSITIONS: ClassVar[dict[MissionStatus, set[MissionStatus]]] = {
-        MissionStatus.DRAFT: {MissionStatus.SCHEDULED, MissionStatus.CANCELLED},
-        MissionStatus.SCHEDULED: {
-            MissionStatus.IN_PROGRESS,
-            MissionStatus.CANCELLED,
-        },
-        MissionStatus.IN_PROGRESS: {
-            MissionStatus.COMPLETED,
-            MissionStatus.CANCELLED,
-        },
-        MissionStatus.COMPLETED: set(),
-        MissionStatus.CANCELLED: set(),
-    }
-
-    def can_transition_to(self, new_status: MissionStatus) -> bool:
-        """Return True when the transition is allowed from the current status."""
-
-        if new_status == self.status:
-            return True
-        return new_status in self._TRANSITIONS[self.status]
-
-    def transition_to(self, new_status: MissionStatus) -> None:
-        """Update mission status if the transition is valid, otherwise raise."""
-
-        if new_status == self.status:
-            return
-        if not self.can_transition_to(new_status):
-            raise ValueError(
-                f"Cannot transition mission {self.code} from {self.status.value} to {new_status.value}"
-            )
-        self.status = new_status
+    def __repr__(self) -> str:  # pragma: no cover - debugging helper
+        return f"<Mission {self.id} {self.title} {self.status}>"
 
 
 __all__ = ["Mission", "MissionStatus"]
