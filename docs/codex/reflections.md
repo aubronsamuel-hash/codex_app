@@ -1,1 +1,1 @@
-Last reflections (keep <= 200 words). Update this per step.
+Focused on building a clean baseline that meets guard expectations. Choosing a factory pattern early should make future configuration (DB, auth) simpler while keeping tests fast. Next time I will pre-create the virtual environment instead of installing globally to avoid pip warnings, but it did not block the run today.
