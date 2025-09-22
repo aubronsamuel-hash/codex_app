@@ -37,6 +37,10 @@ foreach ($guard in $guards) {
   Write-Host "Running $guard..."
   & $path
   if ($LASTEXITCODE -ne 0) {
+    if ($guard -eq "commit_guard.ps1") {
+      Write-Host "commit_guard detected an issue with docs/codex/last_output.json."
+      Write-Host 'Run: pwsh -File tools/codex/ensure_last_output.ps1 -Step "NN" -Title "Title" -Summary "Short summary"'
+    }
     $guardExit = $LASTEXITCODE
     break
   }

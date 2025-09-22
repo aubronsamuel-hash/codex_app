@@ -1,25 +1,8 @@
 {
-  "step": "step-03",
-  "files_created": [
-    "docs/roadmap/step-03.md",
-    "src/app/api/routes/__init__.py",
-    "src/app/api/routes/health.py",
-    "src/app/api/routes/version.py",
-    "src/app/core/config.py"
-  ],
-  "files_modified": [
-    "src/app/api/__init__.py",
-    "src/app/settings.py",
-    "tests/test_health.py",
-    "tests/test_version.py"
-  ],
-  "tests": {
-    "pytest -q": "pass",
-    "pytest --cov=src --cov-report=term-missing": "pass"
-  },
-  "ci": {
-    "status": "pending",
-    "details": "GitHub Actions backend-tests workflow expected to pass."
-  },
-  "notes": "Added health and version endpoints with pyproject-based version resolution and supporting tests."
+  "version": "1",
+  "step": "03",
+  "title": "Step 03 - Guards Snapshot",
+  "summary": "All guards green.",
+  "status": "success",
+  "timestamp": "2025-09-22T11:13:56Z"
 }

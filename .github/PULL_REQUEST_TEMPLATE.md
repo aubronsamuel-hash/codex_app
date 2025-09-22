@@ -1,18 +1,25 @@
-# All pull requests must reference the roadmap
+# Pull Request Template
+
 Ref: docs/roadmap/step-XX.md
 
 ## Checklist
-- [ ] Tests passent en CI
-- [ ] Lint / typecheck passent
-- [ ] Documentation mise à jour si nécessaire
-- [ ] Commit message suit Conventional Commits
-- [ ] PR contient la ligne Ref: docs/roadmap/step-XX.md
+- [ ] Tests pass in CI
+- [ ] Lint and type checks pass
+- [ ] Documentation updated if needed
+- [ ] Commit message follows Conventional Commits
+- [ ] PR description includes Ref: docs/roadmap/step-XX.md
+- [ ] docs/codex/last_output.json present with a non-empty "summary"
 
 ## Description
-Expliquez clairement le problème et la solution proposée.
+Clearly explain the problem and the proposed solution.
 
 ## Why
-Pourquoi ce changement est nécessaire.
+Describe why this change is necessary.
 
 ## What changed
-Détail des fichiers ou workflows modifiés.
+List the files, workflows, or guards that were updated.
+
+### Quick command to generate last_output.json
+```
+pwsh -File tools/codex/ensure_last_output.ps1 -Step "XX" -Title "Step XX - Snapshot" -Summary "Short human summary." -Status "success"
+```
