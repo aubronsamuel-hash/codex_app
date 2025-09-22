@@ -11,6 +11,10 @@
     {
       "pattern": "PR without 'Ref: docs/roadmap/step-XX.md'",
       "remedy": "Add the 'Ref:' line to PR body and last commit; run roadmap_guard locally."
+    },
+    {
+      "pattern": "Skipping Codex history archival",
+      "remedy": "Run tools/codex/archive_step.py and confirm history files before merging."
     }
   ]
 }

@@ -7,3 +7,4 @@ Ref: docs/roadmap/step-XX.md
 - [ ] Tests cover the changes
 - [ ] Documentation updated if needed
 - [ ] Ref: docs/roadmap/step-XX.md present in PR body AND last commit
+- [ ] Codex reflections/todo/last_output updated and archived into history
