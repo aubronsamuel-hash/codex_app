@@ -23,7 +23,36 @@ Launch the development server with Uvicorn:
 uvicorn app.main:app --reload
 ```
 
-The health endpoint is available at <http://127.0.0.1:8000/health> and returns service status metadata.
+The service exposes lightweight diagnostics endpoints:
+
+- Health check: <http://127.0.0.1:8000/health>
+- Version metadata: <http://127.0.0.1:8000/version>
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/version
+```
+
+### Configuration
+
+Settings can be overridden with environment variables before launching the server:
+
+| Variable     | Default       | Description                          |
+|--------------|---------------|--------------------------------------|
+| `APP_NAME`   | `Codex App`   | Friendly name exposed in `/health`.  |
+| `APP_ENV`    | `development` | Execution environment label.         |
+| `APP_VERSION`| `0.1.0`       | Version served by `/version`.        |
+| `HOST`       | `127.0.0.1`   | Bind address for local development.  |
+| `PORT`       | `8000`        | Bind port for the ASGI server.       |
+
+Example (PowerShell or Bash):
+
+```bash
+export APP_ENV=production
+export HOST=0.0.0.0
+export PORT=9000
+uvicorn app.main:app --reload --host "$HOST" --port "$PORT"
+```
 
 ## Tests and coverage
 
