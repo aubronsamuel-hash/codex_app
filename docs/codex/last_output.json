@@ -1,16 +1,16 @@
 {
-  "generated_at": "2025-09-22 06:05:33",
-  "summary": "Added configuration settings, logging, and diagnostics endpoints for step 0N",
+  "generated_at": "2025-09-22 06:13:29",
+  "summary": "Enabled Codex CI with consolidated guard harness and updated developer documentation for step 01.",
   "tests": {
-    "command": "pytest",
-    "passed": 3,
+    "command": "pwsh -File tools/guards/run_all_guards.ps1",
+    "passed": 1,
     "failed": 0
   },
-  "duration_seconds": 2,
+  "duration_seconds": 16,
   "token_cost": null,
   "diff": [
-    "Introduced environment-driven settings and wired them into the FastAPI factory",
-    "Added /version endpoint alongside enriched /health response with environment metadata",
-    "Documented configuration variables and sample diagnostics usage in README"
+    "Added GitHub Actions workflow covering backend, frontend placeholder, and guard jobs",
+    "Introduced run_all_guards PowerShell script to chain pytest coverage and all guard checks",
+    "Documented CI usage in README and new docs/CI.md guidance"
   ]
 }
