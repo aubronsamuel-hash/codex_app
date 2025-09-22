@@ -9,18 +9,18 @@ Context
 
 Goals
 
-* [ ] Introduce a `Mission` SQLAlchemy model that stores business identifiers, scheduling windows, audit timestamps, and status.
-* [ ] Enforce controlled status transitions via domain helpers so that missions can only progress forward.
-* [ ] Provide Pydantic schemas to validate create/update payloads for future API work.
-* [ ] Generate an Alembic migration that creates the `missions` table with integrity constraints.
+* [x] Introduce a `Mission` SQLAlchemy model that stores a UUID identifier, scheduling window, audit timestamps, notes, and status.
+* [x] Enforce controlled status transitions via domain helpers so that missions can only progress forward.
+* [x] Provide Pydantic schemas to validate create/update payloads for future API work.
+* [x] Generate an Alembic migration that creates the `missions` table with integrity constraints.
 
 Deliverables
 
-* `src/app/models/mission.py` exporting `Mission` and `MissionStatus` plus helper methods.
+* `src/app/models/mission.py` exporting `Mission` and `MissionStatus` plus helper methods for transitions.
 * `src/app/models/__init__.py` re-export updated domain objects.
-* `src/app/schemas/mission.py` with create/update/read contracts and status validation helpers.
-* Alembic migration adding the `missions` table and schedule check constraint.
-* Tests covering mission persistence, uniqueness, scheduling guards, and status transitions.
+* `src/app/schemas/mission.py` with create/update/read contracts and schedule validation helpers.
+* Alembic migration adding the `missions` table, enforcing the time window, and indexing `start_time`/`end_time`.
+* Tests covering mission persistence, scheduling guards, and status transitions.
 
 Validation
 
