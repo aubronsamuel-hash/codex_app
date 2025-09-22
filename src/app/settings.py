@@ -8,6 +8,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.core.config import get_app_version
+
 
 class Settings(BaseModel):
     """Runtime configuration values for the FastAPI service."""
@@ -16,7 +18,10 @@ class Settings(BaseModel):
     app_env: Literal["development", "staging", "production", "test"] = Field(
         default="development", description="Execution environment identifier."
     )
-    app_version: str = Field(default="0.1.0", description="Published application version string.")
+    app_version: str = Field(
+        default=get_app_version(),
+        description="Published application version string.",
+    )
     host: str = Field(default="127.0.0.1", description="Default bind host for the ASGI server.")
     port: int = Field(default=8000, description="Default bind port for the ASGI server.")
     database_url: str = Field(

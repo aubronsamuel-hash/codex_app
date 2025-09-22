@@ -1,16 +1,25 @@
 {
-  "generated_at": "2025-09-22T07:01:23Z",
-  "summary": "Added JWT-based authentication with SQLAlchemy models, Alembic migrations, and RBAC scaffolding.",
+  "step": "step-03",
+  "files_created": [
+    "docs/roadmap/step-03.md",
+    "src/app/api/routes/__init__.py",
+    "src/app/api/routes/health.py",
+    "src/app/api/routes/version.py",
+    "src/app/core/config.py"
+  ],
+  "files_modified": [
+    "src/app/api/__init__.py",
+    "src/app/settings.py",
+    "tests/test_health.py",
+    "tests/test_version.py"
+  ],
   "tests": {
-    "command": "pytest",
-    "passed": 30,
-    "failed": 0
+    "pytest -q": "pass",
+    "pytest --cov=src --cov-report=term-missing": "pass"
   },
-  "duration_seconds": 360,
-  "token_cost": null,
-  "diff": [
-    "Implemented SQLAlchemy models, security utilities, and FastAPI routes for signup, login, me, and refresh flows.",
-    "Added Alembic project with initial migration plus settings and documentation for database and auth configuration.",
-    "Wrote comprehensive unit and API tests for hashing, JWT validation, and all authentication endpoints."
-  ]
+  "ci": {
+    "status": "pending",
+    "details": "GitHub Actions backend-tests workflow expected to pass."
+  },
+  "notes": "Added health and version endpoints with pyproject-based version resolution and supporting tests."
 }
