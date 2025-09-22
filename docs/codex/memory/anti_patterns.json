@@ -1,0 +1,12 @@
+{
+  "repeat_failures": [
+    {
+      "pattern": "pushing code without tests",
+      "remedy": "block PR when test count for changed files is zero"
+    },
+    {
+      "pattern": "hardcoding secrets",
+      "remedy": "load from env; add secret scanner to CI"
+    }
+  ]
+}

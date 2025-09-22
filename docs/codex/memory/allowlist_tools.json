@@ -1,0 +1,4 @@
+{
+  "python": ["fastapi", "sqlalchemy", "alembic", "pydantic"],
+  "node": ["react", "vite", "tailwindcss", "shadcn/ui"]
+}

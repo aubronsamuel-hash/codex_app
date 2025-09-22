@@ -1,0 +1,11 @@
+{
+  "regex": {
+    "secrets": [
+      "AKIA[0-9A-Z]{16}",
+      "(?i)api[_-]?key\s*=",
+      "(?i)secret\s*=",
+      "-----BEGIN (?:RSA|EC) PRIVATE KEY-----"
+    ]
+  },
+  "files": ["**/*.pem", "**/*.pfx", "src/**/tmp_*"]
+}

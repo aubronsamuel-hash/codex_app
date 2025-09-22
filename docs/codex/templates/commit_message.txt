@@ -1,0 +1,9 @@
+feat(scope): short summary
+
+- why:
+- what:
+- how:
+- tests:
+- notes:
+
+Ref: docs/roadmap/step-XX.md

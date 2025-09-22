@@ -1,0 +1,17 @@
+[required]
+coverage_global = 0.70
+changed_files_coverage = 0.60
+checklist_file = "docs/codex/checklists/auto_review.md"
+
+[deny.regex]
+secrets = ["AKIA[0-9A-Z]{16}", "(?i)api[_-]?key\s*=", "(?i)secret\s*=", "-----BEGIN (?:RSA|EC) PRIVATE KEY-----"]
+
+[deny.files]
+patterns = ["**/*.pem", "**/*.pfx", "src/**/tmp_*"]
+
+[allow.libs]
+python = ["fastapi", "sqlalchemy", "alembic", "pydantic"]
+node = ["react", "vite", "tailwindcss", "shadcn"]
+
+[limits]
+max_diff_lines = 1000
