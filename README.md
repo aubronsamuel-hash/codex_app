@@ -37,13 +37,17 @@ curl http://127.0.0.1:8000/version
 
 Settings can be overridden with environment variables before launching the server:
 
-| Variable     | Default       | Description                          |
-|--------------|---------------|--------------------------------------|
-| `APP_NAME`   | `Codex App`   | Friendly name exposed in `/health`.  |
-| `APP_ENV`    | `development` | Execution environment label.         |
-| `APP_VERSION`| `0.1.0`       | Version served by `/version`.        |
-| `HOST`       | `127.0.0.1`   | Bind address for local development.  |
-| `PORT`       | `8000`        | Bind port for the ASGI server.       |
+| Variable           | Default          | Description                                       |
+|--------------------|------------------|---------------------------------------------------|
+| `APP_NAME`         | `Codex App`      | Friendly name exposed in `/health`.               |
+| `APP_ENV`          | `development`    | Execution environment label.                      |
+| `APP_VERSION`      | `0.1.0`          | Version served by `/version`.                     |
+| `HOST`             | `127.0.0.1`      | Bind address for local development.               |
+| `PORT`             | `8000`           | Bind port for the ASGI server.                    |
+| `DATABASE_URL`     | `sqlite:///./codex.db` | SQLAlchemy-compatible database URL.          |
+| `AUTH_SECRET`      | `change-me`      | Secret key for signing JWTs (override in prod).   |
+| `AUTH_ACCESS_TTL`  | `900`            | Access token lifetime in seconds.                 |
+| `AUTH_REFRESH_TTL` | `604800`         | Refresh token lifetime in seconds.                |
 
 Example (PowerShell or Bash):
 
@@ -54,6 +58,28 @@ export PORT=9000
 uvicorn app.main:app --reload --host "$HOST" --port "$PORT"
 ```
 
+### Database migrations
+
+Run Alembic after adjusting configuration to ensure the authentication tables exist:
+
+```bash
+alembic upgrade head
+```
+
+### Authentication workflows
+
+The backend now exposes a JWT-based stateless authentication API under the `/auth` prefix:
+
+| Endpoint          | Method | Description                                      |
+|-------------------|--------|--------------------------------------------------|
+| `/auth/signup`    | POST   | Register a new user (email + password).          |
+| `/auth/login`     | POST   | Authenticate and receive access/refresh tokens.  |
+| `/auth/me`        | GET    | Retrieve the current user (Bearer token).        |
+| `/auth/refresh`   | POST   | Exchange a refresh token for a new access token. |
+
+Authentication events (successful and failed logins) are emitted at INFO/ERROR levels. Use the refresh endpoint before the
+access token expires to maintain a session without storing server-side state.
+
 ## Tests, coverage, and guards
 
 Pytest is configured to collect coverage automatically with a minimum threshold of 85%.
@@ -62,6 +88,9 @@ Run the suite directly when you need a quick check:
 ```bash
 python -m pytest
 ```
+
+The suite includes unit coverage for password hashing and JWT helpers plus integration tests for the authentication API
+(`/auth/signup`, `/auth/login`, `/auth/me`, and `/auth/refresh`).
 
 Before opening a pull request execute the consolidated guard harness. It installs no extra tools beyond pytest and ensures the
 repository meets Codex policy requirements:
